@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Una pregunta especial... ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Sacramento&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at center, #4A0E17 0%, #2A060C 60%, #1B0307 100%);
+            color: #FFF0F2;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .font-cursive { font-family: 'Sacramento', cursive; }
+        .glass-card {
+            background: rgba(74, 14, 23, 0.45);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 182, 193, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+        .btn-burgundy {
+            background: linear-gradient(135deg, #800020 0%, #B22222 100%);
+            box-shadow: 0 4px 15px rgba(128, 0, 32, 0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-burgundy:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(178, 34, 34, 0.6);
+        }
+        .floating-heart {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 6s linear infinite;
+            opacity: 0.6;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 relative">
+
+    <!-- Fondo con Corazones Animados -->
+    <div id="hearts-container" class="fixed inset-0 pointer-events-none z-0"></div>
+
+    <!-- Contenedor Principal -->
+    <div class="w-full max-w-lg glass-card rounded-3xl p-6 md:p-8 z-10 text-center relative overflow-hidden my-auto">
+        
+        <!-- Barra de Progreso -->
+        <div class="w-full bg-black/40 rounded-full h-2.5 mb-6 overflow-hidden border border-rose-900/30">
+            <div id="progress-bar" class="bg-gradient-to-r from-rose-700 to-rose-400 h-2.5 rounded-full transition-all duration-500" style="width: 10%;"></div>
+        </div>
+
+        <span id="step-indicator" class="text-xs font-semibold tracking-widest text-rose-300/80 uppercase">Pregunta 1 de 10</span>
+
+        <!-- Ilustración / Meme Vectorial -->
+        <div class="my-6 flex justify-center items-center h-48 bg-black/20 rounded-2xl p-4 border border-rose-900/20 relative">
+            <svg id="meme-svg" class="w-full h-full max-h-40 text-rose-300" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Se dibuja dinámicamente según la pregunta -->
+            </svg>
+        </div>
+
+        <!-- Título de la Pregunta -->
+        <h2 id="question-text" class="text-2xl md:text-3xl font-extrabold text-rose-100 mb-6 leading-snug">
+            Holaaaaaa como estas ? 😊
+        </h2>
+
+        <!-- Botones de Opciones -->
+        <div id="options-container" class="flex flex-col sm:flex-row gap-4 justify-center items-center relative min-h-[100px]">
+            <!-- Botones inyectados con JavaScript -->
+        </div>
+
+    </div>
+
+    <!-- Modal emergente para respuestas -->
+    <div id="feedback-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-card rounded-3xl p-8 max-w-sm w-full text-center border-2 border-rose-500/50 shadow-2xl scale-95 transition-transform duration-300" id="modal-card">
+            <div class="text-5xl mb-4" id="modal-icon">🥳</div>
+            <h3 class="text-2xl font-black text-rose-100 mb-2" id="modal-title">¡Mansa respuesta!</h3>
+            <p class="text-rose-200/90 mb-6" id="modal-message">Seguimos avanzando...</p>
+            <button onclick="closeModal()" class="btn-burgundy px-8 py-3 rounded-full font-bold text-white w-full">
+                Siguiente 🚀
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                q: "Holaaaaaa como estas ?",
+                options: [
+                    { text: "Bien bien! 😊", type: "next", reaction: "De una! Me alegro un montón 🔥" },
+                    { text: "Medio bajón 🥺", type: "next", reaction: "Tranqui, esta trivia te va a subir el ánimo 🐱✨" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <circle cx="100" cy="100" r="70" fill="#800020" stroke="#FFB6C1" stroke-width="4"/>
+                        <circle cx="80" cy="85" r="10" fill="#FFF"/>
+                        <circle cx="120" cy="85" r="10" fill="#FFF"/>
+                        <circle cx="80" cy="85" r="5" fill="#000"/>
+                        <circle cx="120" cy="85" r="5" fill="#000"/>
+                        <path d="M 75 125 Q 100 150 125 125" stroke="#FFF" stroke-width="5" fill="none" stroke-linecap="round"/>
+                        <polygon points="50,40 75,65 40,75" fill="#800020" stroke="#FFB6C1" stroke-width="3"/>
+                        <polygon points="150,40 125,65 160,75" fill="#800020" stroke="#FFB6C1" stroke-width="3"/>
+                    `;
+                }
+            },
+            {
+                q: "¿Estás disponible para las próximas semanas?",
+                options: [
+                    { text: "¡Sí, totalmente! 🗓️", type: "next", reaction: "Olvidateee, agendadísimo 🚀" },
+                    { text: "Habría que ver 🧐", type: "next", reaction: "Hacemos un lugarcito sí o sí 😉" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <rect x="40" y="40" width="120" height="120" rx="15" fill="#4A0E17" stroke="#FFB6C1" stroke-width="4"/>
+                        <rect x="40" y="40" width="120" height="35" rx="10" fill="#800020"/>
+                        <circle cx="70" cy="100" r="8" fill="#FFB6C1"/>
+                        <circle cx="100" cy="100" r="8" fill="#FFB6C1"/>
+                        <circle cx="130" cy="100" r="8" fill="#FFA07A"/>
+                        <circle cx="70" cy="130" r="8" fill="#FFB6C1"/>
+                        <circle cx="100" cy="130" r="8" fill="#FFB6C1"/>
+                        <text x="100" y="63" font-size="16" fill="#FFF" font-weight="bold" text-anchor="middle">AGENDA 🐾</text>
+                    `;
+                }
+            },
+            {
+                q: "¿Te gusta el café?",
+                options: [
+                    { text: "Me encanta ☕✨", type: "next", reaction: "Me sirveee! Un cafecito no se le niega a nadie 🤌" },
+                    { text: "Prefiero otra cosa 🧃", type: "next", reaction: "Sale un té o unos buenos mates entonces 🧉" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <path d="M 60 80 L 140 80 L 130 150 C 130 160 110 165 100 165 C 90 165 70 160 70 150 Z" fill="#800020" stroke="#FFB6C1" stroke-width="4"/>
+                        <path d="M 135 95 C 160 95 160 135 130 135" fill="none" stroke="#FFB6C1" stroke-width="4"/>
+                        <path d="M 80 65 Q 85 50 80 35" stroke="#FFA07A" stroke-width="3" fill="none"/>
+                        <path d="M 100 65 Q 105 50 100 35" stroke="#FFA07A" stroke-width="3" fill="none"/>
+                        <path d="M 120 65 Q 125 50 120 35" stroke="#FFA07A" stroke-width="3" fill="none"/>
+                    `;
+                }
+            },
+            {
+                q: "¿Te gustan las hamburguesas?",
+                options: [
+                    { text: "¡Sí, obvio! 🤤", type: "next", reaction: "pefeeetoo pefeeetooo 🍔😋" },
+                    { text: "Más o menos 🤷‍♀️", type: "next", reaction: "Buscamos otra opción riquísima entonces 🍕" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <path d="M 50 90 A 50 40 0 0 1 150 90 Z" fill="#D2691E" stroke="#FFB6C1" stroke-width="3"/>
+                        <rect x="45" y="95" width="110" height="15" rx="5" fill="#32CD32"/>
+                        <rect x="40" y="113" width="120" height="20" rx="5" fill="#8B4513"/>
+                        <path d="M 50 136 A 50 25 0 0 0 150 136 Z" fill="#D2691E" stroke="#FFB6C1" stroke-width="3"/>
+                        <circle cx="80" cy="70" r="2" fill="#FFF"/>
+                        <circle cx="100" cy="65" r="2" fill="#FFF"/>
+                        <circle cx="120" cy="70" r="2" fill="#FFF"/>
+                    `;
+                }
+            },
+            {
+                q: "¿Te gusta la música o ir a recitales?",
+                options: [
+                    { text: "¡Siiii, me encanta! 🎶", type: "next", reaction: "Temazos y alta vibra asegurada 🎧🔥" },
+                    { text: "Prefiero música tranqui 🎧", type: "next", reaction: "Unas buenas canciones de fondo suman 100 puntos ✨" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <circle cx="70" cy="140" r="20" fill="#800020" stroke="#FFB6C1" stroke-width="3"/>
+                        <circle cx="140" cy="120" r="20" fill="#800020" stroke="#FFB6C1" stroke-width="3"/>
+                        <rect x="85" y="40" width="10" height="100" fill="#FFB6C1"/>
+                        <rect x="155" y="20" width="10" height="100" fill="#FFB6C1"/>
+                        <polygon points="95,40 165,20 165,40 95,60" fill="#FFB6C1"/>
+                    `;
+                }
+            },
+            {
+                q: "¿Sos de salir a caminar o preferís plan tranqui?",
+                options: [
+                    { text: "Caminata y charla 🚶‍♀️", type: "next", reaction: "Plancito clave para hablar de todo 🌳" },
+                    { text: "Sentarse a merendar 🍰", type: "next", reaction: "Comida rica + buena charla = combo perfecto 🥐" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <circle cx="100" cy="60" r="25" fill="#800020" stroke="#FFB6C1" stroke-width="3"/>
+                        <path d="M 70 150 Q 100 100 130 150" stroke="#FFB6C1" stroke-width="6" fill="none" stroke-linecap="round"/>
+                        <path d="M 85 100 L 115 100" stroke="#FFA07A" stroke-width="4"/>
+                        <circle cx="90" cy="55" r="4" fill="#FFF"/>
+                        <circle cx="110" cy="55" r="4" fill="#FFF"/>
+                    `;
+                }
+            },
+            {
+                q: "¿Te gusta sacar fotos cuando salís?",
+                options: [
+                    { text: "¡Obvio, para el recuerdo! 📸", type: "next", reaction: "Fotones asegurados entonces 🤳✨" },
+                    { text: "Vivo más el momento 🌿", type: "next", reaction: "Totalmente, lo importante es disfrutarlo 💫" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <rect x="40" y="60" width="120" height="90" rx="15" fill="#4A0E17" stroke="#FFB6C1" stroke-width="4"/>
+                        <circle cx="100" cy="105" r="30" fill="#800020" stroke="#FFB6C1" stroke-width="4"/>
+                        <circle cx="100" cy="105" r="15" fill="#2A060C"/>
+                        <rect x="125" y="75" width="15" height="10" rx="3" fill="#FFB6C1"/>
+                    `;
+                }
+            },
+            {
+                q: "¿Postre de dulce de leche o chocolate?",
+                options: [
+                    { text: "Dulce de leche 🇦🇷", type: "next", reaction: "Orgullo nacional, decisión correcta! 🍯" },
+                    { text: "Chocolate siempre 🍫", type: "next", reaction: "Imposible fallar con el chocolate 🤤" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <path d="M 60 140 L 140 140 L 150 90 L 50 90 Z" fill="#800020" stroke="#FFB6C1" stroke-width="3"/>
+                        <path d="M 50 90 C 50 60 150 60 150 90" fill="#D2691E"/>
+                        <circle cx="100" cy="55" r="12" fill="#FF0000"/>
+                    `;
+                }
+            },
+            {
+                q: "¿Me mandarías hoy alguna foto subida de tono? 🔥🫣",
+                options: [
+                    { text: "Capáz que sí... 🙈", type: "next", reaction: "Epaaaa, guardo la expectativa entonces 🫣🔥" },
+                    { text: "Depende de la cita 😏", type: "next", reaction: "Jajaja me gusta esa negociación 🤝✨" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <path d="M 100 160 C 40 120 30 70 65 45 C 85 30 100 50 100 50 C 100 50 115 30 135 45 C 170 70 160 120 100 160 Z" fill="#B22222" stroke="#FFB6C1" stroke-width="4"/>
+                        <text x="100" y="100" font-size="30" text-anchor="middle">🔥</text>
+                    `;
+                }
+            },
+            {
+                q: "La pregunta definitiva... ¿Querías salir conmigo? ❤️",
+                options: [
+                    { text: "¡SÍ, OBVIO! ❤️", type: "final", reaction: "¡SIII! 🎉 La vamos a pasar increíble ✨" },
+                    { text: "No 😜", type: "dodge" }
+                ],
+                draw: (svg) => {
+                    svg.innerHTML = `
+                        <path d="M 100 170 C 20 110 10 50 60 25 C 85 10 100 35 100 35 C 100 35 115 10 140 25 C 190 50 180 110 100 170 Z" fill="#800020" stroke="#FFD700" stroke-width="5"/>
+                        <circle cx="80" cy="70" r="8" fill="#FFF"/>
+                        <circle cx="120" cy="70" r="8" fill="#FFF"/>
+                        <circle cx="80" cy="70" r="4" fill="#000"/>
+                        <circle cx="120" cy="70" r="4" fill="#000"/>
+                        <path d="M 85 105 Q 100 120 115 105" stroke="#FFF" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    `;
+                }
+            }
+        ];
+
+        let currentStep = 0;
+
+        function initHearts() {
+            const container = document.getElementById('hearts-container');
+            for (let i = 0; i < 20; i++) {
+                const heart = document.createElement('div');
+                heart.innerHTML = '❤️';
+                heart.className = 'floating-heart text-xl';
+                heart.style.left = `${Math.random() * 100}%`;
+                heart.style.animationDuration = `${4 + Math.random() * 6}s`;
+                heart.style.animationDelay = `${Math.random() * 5}s`;
+                container.appendChild(heart);
+            }
+        }
+
+        function renderQuestion() {
+            const item = questions[currentStep];
+            document.getElementById('question-text').innerText = item.q;
+            document.getElementById('step-indicator').innerText = `Pregunta ${currentStep + 1} de ${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentStep + 1) / questions.length) * 100}%`;
+            
+            const svg = document.getElementById('meme-svg');
+            svg.innerHTML = '';
+            item.draw(svg);
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            item.options.forEach((opt) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-burgundy px-6 py-3.5 rounded-full font-bold text-white w-full sm:w-auto min-w-[160px] text-base';
+                btn.innerText = opt.text;
+
+                if (opt.type === 'dodge') {
+                    btn.id = 'dodge-btn';
+                    btn.onmouseover = moveDodgeBtn;
+                    btn.onclick = moveDodgeBtn;
+                    btn.ontouchstart = moveDodgeBtn;
+                } else {
+                    btn.onclick = () => handleChoice(opt);
+                }
+                container.appendChild(btn);
+            });
+        }
+
+        function moveDodgeBtn() {
+            const btn = document.getElementById('dodge-btn');
+            if (!btn) return;
+            const x = Math.random() * (window.innerWidth - 150) - (window.innerWidth / 2 - 75);
+            const y = Math.random() * 200 - 100;
+            btn.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        function handleChoice(opt) {
+            if (opt.type === 'final') {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                showModal('🥳 ¡SIII DE UNA! ❤️', opt.reaction, true);
+            } else {
+                showModal('¡Mansa respuesta! 😎', opt.reaction, false);
+            }
+        }
+
+        function showModal(title, msg, isFinal) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = msg;
+            const modal = document.getElementById('feedback-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('modal-card').classList.remove('scale-95');
+            }, 10);
+
+            if (isFinal) {
+                const btn = modal.querySelector('button');
+                btn.innerText = 'Mandar mensaje por WhatsApp 📲';
+                btn.onclick = () => {
+                    const text = encodeURIComponent('¡Hola! Contesté toda la trivia y la respuesta es SÍ, salgamos juntos ❤️✨');
+                    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+                };
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('feedback-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('modal-card').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (currentStep < questions.length - 1) {
+                    currentStep++;
+                    renderQuestion();
+                }
+            }, 300);
+        }
+
+        window.onload = () => {
+            initHearts();
+            renderQuestion();
+        };
+    </script>
+</body>
+</html>
